@@ -69,6 +69,21 @@ async def create_tables(db_type: str = None):
             await conn.run_sync(Base.metadata.create_all)
 
 
+async def create_tables_without_creating_database(db_type: str = None):
+    """Create tables only, assuming the database itself已经存在.
+
+    适用于你已经提前建好库（例如 spider），
+    只需要确保表存在、但不希望脚本再去执行 CREATE DATABASE 的场景。
+    """
+
+    if db_type is None:
+        db_type = config.SAVE_DATA_OPTION
+    engine = get_async_engine(db_type)
+    if engine:
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+
+
 @asynccontextmanager
 async def get_session() -> AsyncSession:
     engine = get_async_engine(config.SAVE_DATA_OPTION)

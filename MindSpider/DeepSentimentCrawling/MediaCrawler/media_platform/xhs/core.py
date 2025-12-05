@@ -168,8 +168,9 @@ class XiaoHongShuCrawler(AbstractCrawler):
                     # Sleep after each page navigation
                     await asyncio.sleep(config.CRAWLER_MAX_SLEEP_SEC)
                     utils.logger.info(f"[XiaoHongShuCrawler.search] Sleeping for {config.CRAWLER_MAX_SLEEP_SEC} seconds after page {page-1}")
-                except DataFetchError:
-                    utils.logger.error("[XiaoHongShuCrawler.search] Get note detail error")
+                except (DataFetchError, RetryError):
+                    # 捕获数据获取失败或重试耗尽的情况（如触发验证码 / 风控），记录日志后结束本次关键词爬取
+                    utils.logger.error("[XiaoHongShuCrawler.search] Get note detail error, maybe triggered captcha or anti-bot mechanism")
                     break
 
     async def get_creators_and_notes(self) -> None:

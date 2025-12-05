@@ -1,12 +1,12 @@
-# 声明：本代码仅供学习和研究目的使用。使用者应遵守以下原则：  
-# 1. 不得用于任何商业用途。  
-# 2. 使用时应遵守目标平台的使用条款和robots.txt规则。  
-# 3. 不得进行大规模爬取或对平台造成运营干扰。  
-# 4. 应合理控制请求频率，避免给目标平台带来不必要的负担。   
+# 声明：本代码仅供学习和研究目的使用。使用者应遵守以下原则：
+# 1. 不得用于任何商业用途。
+# 2. 使用时应遵守目标平台的使用条款和robots.txt规则。
+# 3. 不得进行大规模爬取或对平台造成运营干扰。
+# 4. 应合理控制请求频率，避免给目标平台带来不必要的负担。
 # 5. 不得用于任何非法或不当的用途。
-#   
-# 详细许可条款请参阅项目根目录下的LICENSE文件。  
-# 使用本代码即表示您同意遵守上述原则和LICENSE中的所有条款。  
+#
+# 详细许可条款请参阅项目根目录下的LICENSE文件。
+# 使用本代码即表示您同意遵守上述原则和LICENSE中的所有条款。
 
 
 # -*- coding: utf-8 -*-
@@ -22,6 +22,8 @@ import urllib
 import urllib.parse
 from io import BytesIO
 from typing import Dict, List, Optional, Tuple, cast
+import os
+
 
 import httpx
 from PIL import Image, ImageDraw, ImageShow
@@ -76,20 +78,26 @@ async def find_qrcode_img_from_canvas(page: Page, canvas_selector: str) -> str:
 
 
 def show_qrcode(qr_code) -> None:  # type: ignore
-    """parse base64 encode qrcode image and show it"""
+    """parse base64 encode qrcode image and save it to a file (WSL friendly)"""
     if "," in qr_code:
         qr_code = qr_code.split(",")[1]
     qr_code = base64.b64decode(qr_code)
     image = Image.open(BytesIO(qr_code))
 
-    # Add a square border around the QR code and display it within the border to improve scanning accuracy.
+    # Add a square border around the QR code to improve scanning accuracy.
     width, height = image.size
-    new_image = Image.new('RGB', (width + 20, height + 20), color=(255, 255, 255))
+    new_image = Image.new("RGB", (width + 20, height + 20), color=(255, 255, 255))
     new_image.paste(image, (10, 10))
     draw = ImageDraw.Draw(new_image)
     draw.rectangle((0, 0, width + 19, height + 19), outline=(0, 0, 0), width=1)
-    del ImageShow.UnixViewer.options["save_all"]
-    new_image.show()
+
+    # In WSL, using Image.show() may try xdg-open and fail. Instead, save the QR code
+    # image to a deterministic file so that the user can open it from Windows.
+    output_dir = os.path.join(os.getcwd(), "qrcodes")
+    os.makedirs(output_dir, exist_ok=True)
+    output_path = os.path.join(output_dir, "xhs_login_qrcode.png")
+    new_image.save(output_path)
+    print(f"[MediaCrawler] 已将小红书扫码二维码保存到: {output_path}，请在 Windows 里打开该图片进行扫码登录。")
 
 
 def get_user_agent() -> str:

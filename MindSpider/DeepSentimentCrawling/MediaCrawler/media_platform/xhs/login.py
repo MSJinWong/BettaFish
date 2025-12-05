@@ -186,12 +186,17 @@ class XiaoHongShuLogin(AbstractLogin):
     async def login_by_cookies(self):
         """login xiaohongshu website by cookies"""
         utils.logger.info("[XiaoHongShuLogin.login_by_cookies] Begin login xiaohongshu by cookie ...")
-        for key, value in utils.convert_str_cookie_to_dict(self.cookie_str).items():
-            if key != "web_session":  # only set web_session cookie attr
+        # 将关键 cookie（例如 web_session 和 a1）写入浏览器，避免只设置 web_session 导致签名缺少 a1
+        cookie_dict = utils.convert_str_cookie_to_dict(self.cookie_str)
+        for key, value in cookie_dict.items():
+            # 目前只关心 web_session 和 a1，其他 cookie 若有需要可再按需放开
+            if key not in ("web_session", "a1"):
                 continue
-            await self.browser_context.add_cookies([{
-                'name': key,
-                'value': value,
-                'domain': ".xiaohongshu.com",
-                'path': "/"
-            }])
+            await self.browser_context.add_cookies([
+                {
+                    "name": key,
+                    "value": value,
+                    "domain": ".xiaohongshu.com",
+                    "path": "/",
+                }
+            ])
